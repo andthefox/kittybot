@@ -1,23 +1,29 @@
 # kittybot/kittybot.py
 import os
-import requests
 
-from dotenv import load_dotenv
+import requests
 
 from telegram.ext import CommandHandler, InlineQueryHandler, Updater
 from telegram import ReplyKeyboardMarkup, InlineQueryResultPhoto
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
 secret_token = os.getenv('TOKEN')
 
-
-updater = Updater(token=secret_token)
 URL = 'https://api.thecatapi.com/v1/images/search'
 
 
 def get_new_image():
-    response = requests.get(URL).json()
+    try:
+        response = requests.get(URL)
+    except Exception as error:
+        print(error)      
+        new_url = 'https://api.thedogapi.com/v1/images/search'
+        response = requests.get(new_url)
+
+    response = response.json()
     random_cat = response[0].get('url')
     return random_cat
 
@@ -28,10 +34,7 @@ def new_cat(update, context):
 
 
 def new_cat_inline(update, context):
-    query = update.inline_query.query
-
-    # if not query:  # empty query should not be handled
-    #    return
+    query = update.inline_query
 
     result = []
 
@@ -41,7 +44,7 @@ def new_cat_inline(update, context):
             InlineQueryResultPhoto(id=str(i), photo_url=photo, thumb_url=photo)
         )
 
-    context.bot.answer_inline_query(inline_query_id=update.inline_query.id,
+    context.bot.answer_inline_query(inline_query_id=query.id,
                                     results=result,
                                     cache_time=0)
 
@@ -49,7 +52,7 @@ def new_cat_inline(update, context):
 def wake_up(update, context):
     chat = update.effective_chat
     name = update.message.chat.first_name
-    # За счёт параметра resize_keyboard=True сделаем кнопки поменьше
+
     button = ReplyKeyboardMarkup([['/newcat']], resize_keyboard=True)
 
     context.bot.send_message(
@@ -60,9 +63,17 @@ def wake_up(update, context):
 
     context.bot.send_photo(chat.id, get_new_image())
 
-updater.dispatcher.add_handler(CommandHandler('start', wake_up))
-updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
-updater.dispatcher.add_handler(InlineQueryHandler(new_cat_inline), )
 
-updater.start_polling()
-updater.idle()
+def main():
+    updater = Updater(token=secret_token)
+
+    updater.dispatcher.add_handler(CommandHandler('start', wake_up))
+    updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
+    updater.dispatcher.add_handler(InlineQueryHandler(new_cat_inline))
+
+    updater.start_polling()
+    updater.idle()
+
+
+if __name__ == '__main__':
+    main()
