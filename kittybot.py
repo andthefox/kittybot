@@ -15,7 +15,8 @@ secret_token = os.getenv('TOKEN')
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    level=logging.INFO,
+    filename='catlog.log')
 
 
 URL = 'https://api.thecatapi.com/v1/images/search'
