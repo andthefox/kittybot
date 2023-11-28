@@ -1,4 +1,5 @@
 # kittybot/kittybot.py
+import logging
 import os
 
 import requests
@@ -12,14 +13,21 @@ load_dotenv()
 
 secret_token = os.getenv('TOKEN')
 
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO)
+
+
 URL = 'https://api.thecatapi.com/v1/images/search'
+
+CATS_INLINE = 6
 
 
 def get_new_image():
     try:
         response = requests.get(URL)
     except Exception as error:
-        print(error)      
+        logging.error(f'Ошибка при запросе к основному API: {error}')
         new_url = 'https://api.thedogapi.com/v1/images/search'
         response = requests.get(new_url)
 
@@ -38,7 +46,7 @@ def new_cat_inline(update, context):
 
     result = []
 
-    for i in range(12):
+    for i in range(CATS_INLINE):
         photo = get_new_image()
         result.append(
             InlineQueryResultPhoto(id=str(i), photo_url=photo, thumb_url=photo)
